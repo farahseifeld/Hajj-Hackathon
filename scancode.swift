@@ -1,24 +1,31 @@
 //
-//  ViewController.swift
+//  scancode.swift
 //  TentsMap
 //
-//  Created by Noura El-Ghamry on 8/2/18.
+//  Created by Noura El-Ghamry on 8/3/18.
 //  Copyright © 2018 Mayada El-Ghamry. All rights reserved.
 //
 
 import UIKit
 import AVFoundation
 
-
-
-class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate
+class scancode: UIViewController, AVCaptureMetadataOutputObjectsDelegate
 {
+
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
     var readtent: String = ""
     var readID: Int = 0
+    var success:Bool?
+    var pilgrims = Pilgrims()
+    var amount:Double?
     
-    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?)
+    {
+        let num = segue.destination as! CheckBalance
+        num.success = success
+        
+    }
     override func viewDidLoad()
     {
         super.viewDidLoad()
@@ -34,7 +41,8 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate
             return
         }
         
-        if (captureSession.canAddInput(videoInput)) {
+        if (captureSession.canAddInput(videoInput))
+        {
             captureSession.addInput(videoInput)
         } else {
             failed()
@@ -43,12 +51,14 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate
         
         let metadataOutput = AVCaptureMetadataOutput()
         
-        if (captureSession.canAddOutput(metadataOutput)) {
+        if (captureSession.canAddOutput(metadataOutput))
+        {
             captureSession.addOutput(metadataOutput)
             
             metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
             metadataOutput.metadataObjectTypes = [.qr]
-        } else {
+        }
+        else {
             failed()
             return
         }
@@ -84,7 +94,8 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate
         }
     }
     
-    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+    func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection)
+    {
         captureSession.stopRunning()
         
         if let metadataObject = metadataObjects.first {
@@ -97,17 +108,23 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate
         dismiss(animated: true)
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?)
-    {
-        let num = segue.destination as! Details
-        num.ID = readID
-        
-    }
+   
     func found(code: String)
     {
         print(code)
         readID = (code as NSString).integerValue
-        performSegue(withIdentifier: "seg", sender: self)
+        if ((pilgrims.Pilgrims[readID]?.balance)?.isLess(than: amount!))!
+        {
+            success = false
+        }
+        else
+        {
+            let y = pilgrims.Pilgrims[readID]?.balance
+            success = true
+            pilgrims.Pilgrims[readID]?.balance =  y! - amount!
+        }
+        performSegue(withIdentifier: "balancecheck", sender: self)
+        
     }
     
     
@@ -120,4 +137,5 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return .portrait
     }
+
 }
